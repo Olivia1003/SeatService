@@ -1,12 +1,10 @@
 const seatService = require('./../services/seatService')
+const timeSecUtil = require('../utils/timeSecUtil')
 
 async function getSeatInfo(ctx) {
-    // let resData = {
-    //     name: 'jack'
-    // }
-    let resData = seatService.getSeatInfoById('1')
-    console.log('resData', resData)
-    ctx.body = resData
+    // let resData = await seatService.getSeatInfoById('3')
+    // ctx.body = resData
+    const temp = timeSecUtil.getTimeStrFromNumber()
 }
 
 module.exports = {

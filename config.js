@@ -1,13 +1,13 @@
 const config = {
 
-    port: 3001,
+    port: 3306,
 
     database: {
-        DATABASE: 'test',
+        DATABASE: 'seat',
         USERNAME: 'root',
-        PASSWORD: '87713389',
+        PASSWORD: 'yq911916',
         PORT: '3306',
-        HOST: 'localhost'
+        HOST: '123.206.182.106'
     }
 }
 
