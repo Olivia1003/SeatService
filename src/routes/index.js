@@ -1,14 +1,16 @@
 const Router = require('koa-router')
 
-// const controllers = require('../controllers')
-const seatController = require('./../controllers/seat')
-const userController = require('../controllers/user')
+// const seatController = require('./../controllers/seat')
+// const userController = require('../controllers/user')
+
+const order = require('./order')
 
 let router = new Router()
 
 // 查
-// router.get('/getUserName', controllers.db.getUserName)
-router.get('/getSeatInfo', seatController.getSeatInfo)
-router.get('/getUserInfo', userController.getUserInfo)
+// router.get('/getSeatInfo', seatController.getSeatInfo)
+// router.get('/getUserInfo', userController.getUserInfo)
+
+router.use('/order', order.routes())
 
 module.exports = router
