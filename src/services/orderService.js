@@ -11,7 +11,6 @@ async function getOrderByUserId(userId) {
     } else {
         result = null
     }
-    // console.log('getSeatInfoById', result)
     return result
 }
 
@@ -19,12 +18,20 @@ async function deleteOrderById(orderId) {
     let _sql = `UPDATE order_info 
                 SET status = "0" 
                 WHERE order_id="${orderId}"`
-    console.log('deleteOrderById start')
+    let result = await dbUtils.query(_sql)
+    return result
+}
+
+async function changeOrderStatus(orderId, status) {
+    let _sql = `UPDATE order_info 
+                SET status = "${status}" 
+                WHERE order_id="${orderId}"`
     let result = await dbUtils.query(_sql)
     return result
 }
 
 module.exports = {
     getOrderByUserId,
-    deleteOrderById
+    deleteOrderById,
+    changeOrderStatus
 }

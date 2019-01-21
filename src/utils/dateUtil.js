@@ -45,6 +45,29 @@ function getStrFromDateTime(input) {
 
 /**
  * 
+ * @param {string} '2019-02-15 08:00' 
+ * @return {Date} Date Object
+ */
+function getDateObjFromLongStr(input) {
+    if (!(input && input.length >= 16)) {
+        return new Date()
+    }
+    let res = new Date()
+    const p = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})$/
+    input.replace(p, (all, yyyy, mon, dd, hh, mm) => {
+        const year = parseInt(yyyy)
+        const month = parseInt(mon)
+        const day = parseInt(dd)
+        const hour = parseInt(hh)
+        const min = parseInt(mm)
+        res = new Date(year, month - 1, day, hour, min)
+    })
+    console.log('getDateObjFromLongStr res', res)
+    return res;
+}
+
+/**
+ * 
  * @param {Date} input 2019-01-01 12:00
  * @param {number} min 30
  * @return {Date} 2019-01-01 12:30
@@ -59,6 +82,7 @@ function addMinute(input, min) {
 
 module.exports = {
     getEndTimeFromStartTime,
+    getDateObjFromLongStr,
     // getDateTimeFromStr,
     // getStrFromDateTime,
     // addMinute
