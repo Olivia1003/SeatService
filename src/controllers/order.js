@@ -42,16 +42,25 @@ async function deleteOrderById(ctx) {
 // 根据order_id改变订单status
 async function changeOrderStatus(ctx) {
     console.log('changeOrderStatus request', ctx.request.query)
-    const orderId = ctx.request.query.orderId
-    const status = ctx.request.query.status
-    let queryRes = await orderService.changeOrderStatus(orderId, status)
-    console.log('changeOrderStatus result', queryRes)
-    // 判断是否成功
-    const resData = {
-        flag: (queryRes.affectedRows >= 1 && queryRes.changedRows >= 1) ? 1 : 0
+    const {
+        orderId,
+        status,
+        leaveType
+    } = ctx.request.query
+    // TODO：如果状态1->2，要判断是否在预定时间内
+    // TODO：如果状态2->3，判断暂离种类
+    if (parseInt(status) === 3) {
+        console.log('changeOrderStatus leave', leaveType)
+        // 在表中记录该订单剩余暂离时间
     }
-    ctx.response.status = 200
-    ctx.response.body = resData
+    // let queryRes = await orderService.changeOrderStatus(orderId, status)
+    // console.log('changeOrderStatus result', queryRes)
+    // // 判断是否成功
+    // const resData = {
+    //     flag: (queryRes.affectedRows >= 1 && queryRes.changedRows >= 1) ? 1 : 0
+    // }
+    // ctx.response.status = 200
+    // ctx.response.body = resData
 }
 
 async function testFun() {

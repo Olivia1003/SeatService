@@ -4,6 +4,9 @@ CREATE TABLE   IF NOT EXISTS  `user_info` (
   `school` varchar(255) DEFAULT '',
   `point` varchar(255) DEFAULT '0',
   `hour` varchar(255) DEFAULT '0',
+  `rank` varchar(255) DEFAULT '0',
+  `leave_short` int(11) DEFAULT 0,
+  `leave_long` int(11) DEFAULT 0,
   PRIMARY KEY (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

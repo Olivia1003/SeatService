@@ -1,8 +1,10 @@
 const Router = require('koa-router')
-// const orderController = require('../controllers/order')
+const userController = require('../controllers/user')
 
 let router = new Router()
 
-// const routers = router.get('/search', orderController.getOrderByUserId)
+const routers = router
+    .get('/', userController.getUserInfoById)
+    .get('/login', userController.checkUserLogin)
 
-// module.exports = routers
+module.exports = routers
