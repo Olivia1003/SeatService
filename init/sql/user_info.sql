@@ -1,6 +1,7 @@
 CREATE TABLE   IF NOT EXISTS  `user_info` (
-  `user_id` int(11) NOT NULL AUTO_INCREMENT,
-  `name` varchar(255) DEFAULT NULL,
+  `user_no` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` varchar(255) DEFAULT NULL,
+  -- `name` varchar(255) DEFAULT NULL,
   `school` varchar(255) DEFAULT '',
   `point` varchar(255) DEFAULT '0',
   `hour` varchar(255) DEFAULT '0',

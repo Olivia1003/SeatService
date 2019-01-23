@@ -1,6 +1,7 @@
 const orderService = require('./../services/orderService')
 const dateUtil = require('../utils/dateUtil')
 const timeSecUtil = require('../utils/timeSecUtil')
+const redisUtil = require('../utils/redisUtil')
 
 // 根据user_id得到对应的order list
 async function getOrderByUserId(ctx) {
@@ -8,19 +9,22 @@ async function getOrderByUserId(ctx) {
     console.log('getOrderByUserId requst', ctx.request.query)
     const queryRes = await orderService.getOrderByUserId(userId)
     console.log('getOrderByUserId result', queryRes)
-    const resData = queryRes.map((oItem) => {
-        return {
-            seatId: oItem.seat_id,
-            seatName: oItem.name,
-            school: oItem.school,
-            floor: oItem.floor,
-            keywords: oItem.keywords,
-            orderId: oItem.order_id,
-            date: oItem.date,
-            timeList: JSON.parse(oItem.time_list) || [],
-            status: oItem.status
-        }
-    })
+    let resData = {}
+    if (queryRes) {
+        resData = queryRes.map((oItem) => {
+            return {
+                seatId: oItem.seat_id,
+                seatName: oItem.name,
+                school: oItem.school,
+                floor: oItem.floor,
+                keywords: oItem.keywords,
+                orderId: oItem.order_id,
+                date: oItem.date,
+                timeList: JSON.parse(oItem.time_list) || [],
+                status: oItem.status
+            }
+        })
+    }
     ctx.response.status = 200
     ctx.response.body = resData
 }
@@ -53,21 +57,26 @@ async function changeOrderStatus(ctx) {
         console.log('changeOrderStatus leave', leaveType)
         // 在表中记录该订单剩余暂离时间
     }
-    // let queryRes = await orderService.changeOrderStatus(orderId, status)
-    // console.log('changeOrderStatus result', queryRes)
-    // // 判断是否成功
-    // const resData = {
-    //     flag: (queryRes.affectedRows >= 1 && queryRes.changedRows >= 1) ? 1 : 0
-    // }
-    // ctx.response.status = 200
-    // ctx.response.body = resData
+    let queryRes = await orderService.changeOrderStatus(orderId, status)
+    console.log('changeOrderStatus result', queryRes)
+    // 判断是否成功
+    const resData = {
+        flag: (queryRes.affectedRows >= 1 && queryRes.changedRows >= 1) ? 1 : 0
+    }
+    ctx.response.status = 200
+    ctx.response.body = resData
 }
 
 async function testFun() {
     console.log('testFun')
-    // const res = timeSecUtil.isInTimeSection(new Date(2019, 1, 12, 8, 30), '2019-02-12', [0, 1, 2])
-    const res = timeSecUtil.getTimeStrFromNumber([0, 1, 2])
-    console.log('testFun res', res)
+    // redisUtil.test()
+    redisUtil.setHashValue('seat111', {
+        date: '2019-02-10',
+        timeList: '[1,2,3,7,8,9]'
+    })
+    const res = await redisUtil.getHashValue('seat111')
+    // console.log('setHashValue res', res)
+
 }
 
 module.exports = {
