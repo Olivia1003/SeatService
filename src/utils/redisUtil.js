@@ -15,30 +15,59 @@ function test() {
     })
 }
 
-function getHashValue(key) {
+/**
+ * 根据floorId得到所有seat信息列表
+ * @param {string} field 1
+ * @return {Promise} 数据为seatList
+ */
+function getHashField(field) {
     return new Promise((resolve, reject) => {
-        client.hgetall(key, function (err, value) {
+        client.hgetall(field, function (err, value) {
             if (err) {
                 reject()
-                // throw err;
             } else {
-                console.log('redis hash get', key, value)
                 resolve(value)
             }
         })
     })
 }
 
-function setHashValue(key, value) {
+/**
+ * 根据field和seatId[]得到多个
+ * @param {string} field floorId
+ * @param {Array} key seatId
+ * @return 该seat信息
+ */
+function getHashFieldItem(field, key) {
     return new Promise((resolve, reject) => {
-        console.log('redis hash set key value', key, value)
-        client.hmset(key, value, Redis.print)
+        client.hmget(field, key, function (err, value) {
+            if (err) {
+                reject()
+            } else {
+                resolve(value)
+            }
+        })
+    })
+}
+
+function setHashField(field, fieldValue) {
+    return new Promise((resolve, reject) => {
+        client.hmset(field, fieldValue, Redis.print)
+        resolve()
+    })
+}
+
+function setHashFieldItem(field, key, keyValue) {
+    return new Promise((resolve, reject) => {
+        client.hmset(field, key, keyValue, Redis.print)
         resolve()
     })
 }
 
 module.exports = {
     test,
-    getHashValue,
-    setHashValue
+    getHashField,
+    getHashFieldItem,
+    setHashField,
+    setHashFieldItem
 }

@@ -1,8 +1,7 @@
 CREATE TABLE   IF NOT EXISTS  `seat_info` (
   `seat_id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) DEFAULT NULL,
-  `school` varchar(255) DEFAULT NULL,
-  `floor` varchar(255) DEFAULT NULL,
+  `floor_id` int(11) DEFAULT NULL,
   `keywords` varchar(255) DEFAULT '[]',
   `position` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`seat_id`)
