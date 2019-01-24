@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "init_sql": "node ./init/index.js",
+    "init_redis": "node ./init/initRedis.js",
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

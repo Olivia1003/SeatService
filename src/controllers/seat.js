@@ -20,23 +20,14 @@ async function getFloorBySchool(ctx) {
 
 // 根据floorId等搜索座位，从Redis中
 async function searchSeatList(ctx) {
-    const {
-        floorId,
-        date,
-        timeList,
-        keywords
-    } = ctx.request.query
+    let resData = {}
     console.log('searchSeatList start', ctx.request.query)
-    let queryRes = await seatService.searchSeatList(floorId, date, timeList, keywords)
-    console.log('searchSeatList res', queryRes)
-    // const resData = queryRes.map((fItem) => {
-    //     return {
-    //         floorId: fItem.floor_id,
-    //         floorName: fItem.floor_name
-    //     }
-    // })
-    // console.log('getFloorBySchool res', resData)
-    // ctx.body = resData
+    const floorId = ctx.request.query.floorId
+    const date = ctx.request.query.date
+    const timeList = JSON.parse(ctx.request.query.timeList)
+    const keywords = JSON.parse(ctx.request.query.keywords)
+    resData = await seatService.searchSeatList(floorId, date, timeList, keywords)
+    ctx.body = resData
 }
 
 module.exports = {
