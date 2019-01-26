@@ -3,6 +3,8 @@ const app = new Koa()
 const router = require('./src/routes')
 const koaLogger = require('koa-logger')
 
+const rushProcess = require('./src/controllers/rushProcess')
+
 // 配置控制台日志中间件
 app.use(koaLogger())
 
@@ -15,5 +17,7 @@ app.use(router.routes())
 //temp
 
 app.listen(3000)
+
+rushProcess.initRushProcess()
 
 console.log('[demo] start-quick is starting at port 3000')

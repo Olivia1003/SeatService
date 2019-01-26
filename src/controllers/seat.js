@@ -24,14 +24,31 @@ async function searchSeatList(ctx) {
     console.log('searchSeatList start', ctx.request.query)
     const floorId = ctx.request.query.floorId
     const date = ctx.request.query.date
-    const timeList = JSON.parse(ctx.request.query.timeList)
-    const keywords = JSON.parse(ctx.request.query.keywords)
+    const timeList = JSON.parse(ctx.request.query.timeList) || []
+    const keywords = JSON.parse(ctx.request.query.keywords) || []
     resData = await seatService.searchSeatList(floorId, date, timeList, keywords)
+    ctx.body = resData
+}
+
+// 抢座
+async function bookSeatRush(ctx) {
+    let resData = {}
+    const {
+        userId,
+        userPoint,
+        seatId,
+        date
+    } = ctx.request.query
+    const timeList = JSON.parse(ctx.request.query.timeList) || []
+    console.log('bookSeatRush req', userId, userPoint, seatId, date, timeList)
+    const queryRes = seatService.bookSeatRush(userId, userPoint, seatId, date, timeList)
+    console.log('bookSeatRush queryRes', queryRes)
     ctx.body = resData
 }
 
 module.exports = {
     getSeatInfoById,
     getFloorBySchool,
-    searchSeatList
+    searchSeatList,
+    bookSeatRush
 }

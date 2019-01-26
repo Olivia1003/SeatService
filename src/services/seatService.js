@@ -1,5 +1,7 @@
 const dbUtils = require('./../utils/dbUtil')
 const redisUtils = require('./../utils/redisUtil')
+// 抢座优先级：低，中，高
+const RUSH_LIST = ['lowPrio', 'midPrio', 'highPrio']
 
 async function getSeatInfoById(seatId) {
     let _sql = `SELECT * from seat_info
@@ -58,9 +60,39 @@ async function searchSeatList(floorId, date, timeList, keywords) {
     return resData
 }
 
+async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
+    let resData = {}
+    const listKey = getPriorityByPoint(userPoint)
+    const rushItem = {
+        userId,
+        seatId,
+        date,
+        timeList
+    }
+    if (listKey) {
+        console.log('pushIntoList', listKey, rushItem)
+        redisUtils.pushIntoList(listKey, JSON.stringify(rushItem))
+    } else {
+        console.log('user forbiddened')
+    }
+    return resData
+}
+
+function getPriorityByPoint(point) {
+    let res = ''
+    if (point >= 0 && point < 100) {
+        res = RUSH_LIST[0]
+    } else if (point >= 100 && point < 200) {
+        res = RUSH_LIST[1]
+    } else if (point >= 200) {
+        res = RUSH_LIST[2]
+    }
+    return res
+}
 
 module.exports = {
     getSeatInfoById,
     getFloorBySchool,
-    searchSeatList
+    searchSeatList,
+    bookSeatRush
 }

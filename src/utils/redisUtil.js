@@ -50,6 +50,11 @@ function getHashFieldItem(field, key) {
     })
 }
 
+/**
+ * 设置整个field(floor)的值
+ * @param {*} field 'floor1'
+ * @param {*} fieldValue {seat111:'',seat222:''}
+ */
 function setHashField(field, fieldValue) {
     return new Promise((resolve, reject) => {
         client.hmset(field, fieldValue, Redis.print)
@@ -57,6 +62,12 @@ function setHashField(field, fieldValue) {
     })
 }
 
+/**
+ * 设置单个seat的值
+ * @param {*} field 'floor1'
+ * @param {*} key 'seat111'
+ * @param {*} keyValue '{date:"2019-02-16",type:1}'
+ */
 function setHashFieldItem(field, key, keyValue) {
     return new Promise((resolve, reject) => {
         client.hmset(field, key, keyValue, Redis.print)
@@ -64,10 +75,50 @@ function setHashFieldItem(field, key, keyValue) {
     })
 }
 
+function popFromList(key) {
+    return new Promise((resolve, reject) => {
+        client.lpop(key, function (err, value) {
+            if (err) {
+                reject()
+            } else {
+                resolve(value)
+            }
+        })
+    })
+}
+
+// 阻塞
+function bPopFromList(key) {
+    const BLOCK_TIME = 2
+    console.log('bPopFromList start', key)
+    return new Promise((resolve, reject) => {
+        client.blpop(key, BLOCK_TIME, function (err, value) {
+            // console.log('bPopFromList key', key, 'res', err, value)
+            if (value) {
+                resolve(value)
+            } else {
+                reject()
+            }
+        })
+    })
+}
+
+function pushIntoList(key, value) {
+    return new Promise((resolve, reject) => {
+        client.rpush(key, value, Redis.print)
+        resolve()
+    })
+}
+
+
+
 module.exports = {
     test,
     getHashField,
     getHashFieldItem,
     setHashField,
-    setHashFieldItem
+    setHashFieldItem,
+    popFromList,
+    bPopFromList,
+    pushIntoList
 }

@@ -7,5 +7,6 @@ const routers = router
     .get('/', seatController.getSeatInfoById)
     .get('/floor', seatController.getFloorBySchool)
     .get('/search', seatController.searchSeatList)
+    .put('/rush', seatController.bookSeatRush)
 
 module.exports = routers
