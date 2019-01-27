@@ -30,8 +30,22 @@ async function changeOrderStatus(orderId, status) {
     return result
 }
 
+async function addOrder(userId, seatId, date, timeList, status = 1) {
+    // console.log('addOrder', userId, seatId, date, timeList, status)
+    const timeListStr = JSON.stringify(timeList) || ''
+    let _sql = `INSERT INTO order_info
+                set user_id="${userId}",seat_id=${seatId},date="${date}",time_list="${timeListStr}",status="${status}"`
+    let queryRes = await dbUtils.query(_sql)
+    const resData = {
+        flag: queryRes.affectedRows > 0
+    }
+    // console.log('addOrder result', resData)
+    return resData
+}
+
 module.exports = {
     getOrderByUserId,
     deleteOrderById,
-    changeOrderStatus
+    changeOrderStatus,
+    addOrder
 }

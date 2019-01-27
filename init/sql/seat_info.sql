@@ -4,6 +4,7 @@ CREATE TABLE   IF NOT EXISTS  `seat_info` (
   `floor_id` int(11) DEFAULT NULL,
   `keywords` varchar(255) DEFAULT '[]',
   `position` varchar(255) DEFAULT NULL,
+  `type` varchar(255) DEFAULT '1',
   PRIMARY KEY (`seat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

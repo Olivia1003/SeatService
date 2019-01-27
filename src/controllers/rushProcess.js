@@ -1,57 +1,204 @@
 const redisUtil = require('../utils/redisUtil')
+const orderService = require('../services/orderService')
+// const seatService = require('../services/seatService')
+const seatService = require('../services/tempService')
+const arrayUtil = require('../utils/arrayUtil')
+// const dbUtil = require('../utils/dbUtil')
 // const TIME_OUT = 3000
-let PRO_COUNT = 0
+// let itemCount = 1 // 执行的请求数，用于区别优先级
+// let freeCount = 0 // 读到队列为空的次数
+const MAX_FREE_COUNT = 10 // 最大空闲次数，达到后暂时休眠
+let isListening = true // 是否在监听
 // 抢座优先级：低，中，高
 const RUSH_LIST = ['lowPrio', 'midPrio', 'highPrio']
+
+// 请求进入队列后，保证此时在监听
+function resetIsListening() {
+    // freeCount = 0
+    if (!isListening) {
+        console.log('监听队列————重新启动')
+        startRushProcess(1, 1)
+    }
+}
+
+// 取出一个请求后，在数据库新增订单
+// async function generateRushOrder(rushItem) {
+//     return new Promise((resolve, reject) => {
+//         let resData = {
+//             flag: 0
+//         }
+//         console.log('generateRushOrder', rushItem)
+//         // 在order_info新增一条
+//         // console.log('orderService', orderService)
+//         const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
+//         console.log('addOrder res', addDBRes)
+//         // 改变redis中空闲时间
+//         const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
+//         const floorKey = `floor${floorId}`
+//         const seatKey = `seat${rushItem.seatId}`
+//         redisUtil.getHashFieldItem(floorKey, seatKey)
+//             .then((res) => {
+//                 if (res && JSON.parse(res)) {
+//                     const seatData = JSON.parse(res)
+//                     console.log('seatData', seatData, seatData.freeTime)
+//                     const newFreeTime = seatData.freeTime.map((tItem) => {
+//                         if (tItem.date === rushItem.date) {
+//                             // 时间段取差集
+//                             const newTimeList = []
+//                             tItem.timeList.forEach((secItem) => {
+//                                 if (!(rushItem.timeList.indexOf(secItem) >= 0)) {
+//                                     newTimeList.push(secItem)
+//                                 }
+//                             })
+//                             return {
+//                                 date: tItem.date,
+//                                 timeList: newTimeList
+//                             }
+//                         } else {
+//                             return tItem
+//                         }
+//                     })
+//                     const newSeatData = {
+//                         ...seatData,
+//                         freeTime: newFreeTime
+//                     }
+//                     console.log('newSeatData', newSeatData, newSeatData.freeTime)
+//                     redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
+//                     resData.flag = 1
+//                     resolve(resData)
+//                 }
+//             }, (res) => {
+//                 console.log('generateRushOrder fail', res)
+//                 reject(resData)
+//             })
+//     })
+// }
+
+// 取出一个请求后，更新redis并且在数据库新增订单
+async function generateRushOrder(rushItem) {
+    let resData = {
+        flag: 0
+    }
+    // 更新redis中空闲时间
+    const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
+    const floorKey = `floor${floorId}`
+    const seatKey = `seat${rushItem.seatId}`
+    const seatDataStr = await redisUtil.getHashFieldItem(floorKey, seatKey)
+    let isBookSuccess = false // 时间段是否能预约成功
+    if (seatDataStr && JSON.parse(seatDataStr)) {
+        const seatData = JSON.parse(seatDataStr)
+        // console.log('seatData', seatData, seatData.freeTime)
+        const newFreeTime = seatData.freeTime.map((tItem) => {
+            if (tItem.date === rushItem.date) {
+                // 时间段取差集，判断是否预约成功
+                const subTimeList = arrayUtil.getSub(tItem.timeList, rushItem.timeList)
+                const unionTimeList = arrayUtil.getUnion(tItem.timeList, rushItem.timeList)
+                if (unionTimeList.length === rushItem.timeList.length) {
+                    isBookSuccess = true
+                }
+                return {
+                    date: tItem.date,
+                    timeList: subTimeList
+                }
+            } else {
+                return tItem
+            }
+        })
+        const newSeatData = {
+            ...seatData,
+            freeTime: newFreeTime
+        }
+        // console.log('newSeatData', newSeatData, newSeatData.freeTime)
+        if (isBookSuccess) {
+            const setRes = await redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
+        }
+    }
+    // 若可预约，在order_info新增一条
+    if (isBookSuccess) {
+        // console.log('orderService', orderService)
+        const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
+        // console.log('addOrder res', addDBRes)
+        resData.flag = 1
+    }
+    return resData
+}
+
 
 // 从消息队列中取出一个消息，进行处理
 function getRushItem(listKey) {
     return new Promise((resolve, reject) => {
         // console.log('processRushReq', listKey)
         // const listKey = RUSH_LIST[1]
-        redisUtil.bPopFromList(listKey)
+        redisUtil.popFromList(listKey)
             .then((res) => { // 有消息，处理
-                console.log('---getRushItem success res', listKey, typeof res)
-                if (res[1] && JSON.parse(res[1])) {
-                    const rushItem = JSON.parse(res[1])
-                    console.log('---getRushItem success rushItem', rushItem)
+                // console.log('---getRushItem success res', listKey, res)
+                if (res && JSON.parse(res)) {
+                    const rushItem = JSON.parse(res)
                     // 在数据库添加订单，并且修改该座位空闲时间段
-                    resolve()
+                    // console.log('开始添加订单', rushItem)
+                    generateRushOrder(rushItem)
+                        .then((res) => {
+                            if (res.flag === 1) {
+                                console.log('添加订单成功', res)
+                                resolve()
+                            } else {
+                                console.log('添加订单失败', res)
+                                reject()
+                            }
+                        })
                 }
             }, (res) => { // 无消息
-                console.log('---getRushItem fail no message', listKey)
+                // console.log('---getRushItem fail no message', listKey)
                 reject()
             })
     })
 }
 
 
-function startRushProcess() {
+function startRushProcess(itemCount, freeCount) {
     // 一定数量后重置
-    if (PRO_COUNT >= 100) {
-        PRO_COUNT = 0
+    if (itemCount >= 100) {
+        itemCount = 1
     }
     let listKey = RUSH_LIST[0]
-    if (PRO_COUNT % 10 === 0) { // 低
+    if (itemCount % 7 === 0) { // 低
         listKey = RUSH_LIST[0]
-    } else if (PRO_COUNT % 3 === 0) { // 中
+    } else if (itemCount % 3 === 0) { // 中
         listKey = RUSH_LIST[1]
     } else { // 高
         listKey = RUSH_LIST[2]
     }
-    PRO_COUNT++
+    // itemCount++
     // 指定队列，取出一个消息进行处理，处理完成后继续
-    getRushItem(listKey).then((res) => {
-        startRushProcess()
-    }, (res) => {
-        startRushProcess()
-    })
+    getRushItem(listKey)
+        .then((res) => {
+            console.log('处理请求成功', listKey, 'itemCount', itemCount)
+            // freeCount = 0
+            // console.log('处理成功再次调用......')
+            startRushProcess(++itemCount, 0)
+        }, (res) => {
+            // freeCount++
+            console.log('队列为空', listKey, 'freeCount', freeCount)
+            // 连续多次请求队列为空，暂时休眠
+            if (freeCount >= MAX_FREE_COUNT) {
+                isListening = false
+                console.log('监听队列————暂时休眠')
+                return
+            } else {
+                // console.log('队列为空再次调用......')
+                startRushProcess(++itemCount, ++freeCount)
+            }
+        })
 }
 
 function initRushProcess() {
-    startRushProcess()
+    console.log('初始启动监听队列...')
+    // console.log('seatService', seatService)
+    // console.log('orderService', orderService)
+    startRushProcess(1, 1)
 }
 
 module.exports = {
-    initRushProcess
+    initRushProcess,
+    resetIsListening
 }

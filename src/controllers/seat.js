@@ -41,6 +41,7 @@ async function bookSeatRush(ctx) {
     } = ctx.request.query
     const timeList = JSON.parse(ctx.request.query.timeList) || []
     console.log('bookSeatRush req', userId, userPoint, seatId, date, timeList)
+    // console.log('seatService', seatService)
     const queryRes = seatService.bookSeatRush(userId, userPoint, seatId, date, timeList)
     console.log('bookSeatRush queryRes', queryRes)
     ctx.body = resData
