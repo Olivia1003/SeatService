@@ -1,39 +1,34 @@
 const dbUtils = require('./../utils/dbUtil')
 
 async function getUserInfoById(userId) {
+    let resData
     let _sql = `SELECT * from user_info
                 where user_id="${userId}"`
-    let result = await dbUtils.query(_sql)
-    if (Array.isArray(result) && result.length > 0) {
-        result = result[0]
-    } else {
-        result = undefined
+    try {
+        let queryRes = await dbUtils.query(_sql)
+        if (Array.isArray(queryRes) && queryRes.length > 0) {
+            resData = queryRes[0]
+        }
+    } catch (e) {
+        console.log('getUserInfoById fail', e)
     }
-    return result
+    return resData
 }
 
-// async function getUserInfoByOpenId(userOpenId) {
-//     let _sql = `SELECT * from user_info
-//                 where user_open_id="${userOpenId}"`
-//     let result = await dbUtils.query(_sql)
-//     if (Array.isArray(result) && result.length > 0) {
-//         result = result[0]
-//     } else {
-//         result = undefined
-//     }
-//     return result
-// }
-
 // insert添加用户信息
-async function registerUser(userId) {
+async function registerUser(userId, schoolId = 1) {
+    let resData
     let _sql = `INSERT INTO user_info
-                set user_id="${userId}",school="华东师范大学"`
-    let result = await dbUtils.query(_sql)
-    return result
+                set user_id="${userId}",school_id=${schoolId}`
+    try {
+        resData = await dbUtils.query(_sql)
+    } catch (e) {
+        console.log('registerUser fail', e)
+    }
+    return resData
 }
 
 module.exports = {
     getUserInfoById,
-    // getUserInfoByOpenId,
     registerUser
 }

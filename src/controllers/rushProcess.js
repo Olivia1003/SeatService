@@ -28,51 +28,62 @@ async function generateRushOrder(rushItem) {
     let resData = {
         flag: 0
     }
-    // 更新redis中空闲时间
-    const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
-    const floorKey = `floor${floorId}`
-    const seatKey = `seat${rushItem.seatId}`
-    const seatDataStr = await redisUtil.getHashFieldItem(floorKey, seatKey)
-    let isBookSuccess = false // 时间段是否能预约成功
-    if (seatDataStr && JSON.parse(seatDataStr)) {
-        const seatData = JSON.parse(seatDataStr)
-        // console.log('seatData', seatData, seatData.freeTime)
-        const newFreeTime = seatData.freeTime.map((tItem) => {
-            if (tItem.date === rushItem.date) {
-                // 时间段取差集，判断是否预约成功
-                const subTimeList = arrayUtil.getSub(tItem.timeList, rushItem.timeList)
-                const unionTimeList = arrayUtil.getUnion(tItem.timeList, rushItem.timeList)
-                if (unionTimeList.length === rushItem.timeList.length) {
-                    isBookSuccess = true
+    try {
+        // 更新redis中空闲时间
+        console.log('generateRushOrder start', rushItem)
+        const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
+        if (!floorId) {
+            console.log('get floorId fail')
+            return
+        }
+        console.log('floorId', floorId)
+        const floorKey = `floor${floorId}`
+        const seatKey = `seat${rushItem.seatId}`
+        const seatDataStr = await redisUtil.getHashFieldItem(floorKey, seatKey)
+        console.log('seatDataStr', seatDataStr)
+        let isBookSuccess = false // 时间段是否能预约成功
+        if (seatDataStr && JSON.parse(seatDataStr)) {
+            const seatData = JSON.parse(seatDataStr)
+            console.log('seatData', seatData, seatData.freeTime)
+            const newFreeTime = seatData.freeTime.map((tItem) => {
+                if (tItem.date === rushItem.date) {
+                    // 时间段取差集，判断是否预约成功
+                    const subTimeList = arrayUtil.getSub(tItem.timeList, rushItem.timeList)
+                    const unionTimeList = arrayUtil.getUnion(tItem.timeList, rushItem.timeList)
+                    if (unionTimeList.length === rushItem.timeList.length) {
+                        isBookSuccess = true
+                    }
+                    return {
+                        date: tItem.date,
+                        timeList: subTimeList
+                    }
+                } else {
+                    return tItem
                 }
-                return {
-                    date: tItem.date,
-                    timeList: subTimeList
-                }
-            } else {
-                return tItem
+            })
+            const newSeatData = {
+                ...seatData,
+                freeTime: newFreeTime
             }
-        })
-        const newSeatData = {
-            ...seatData,
-            freeTime: newFreeTime
+            // console.log('newSeatData', newSeatData, newSeatData.freeTime)
+            if (isBookSuccess) {
+                const setRes = await redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
+            }
         }
-        // console.log('newSeatData', newSeatData, newSeatData.freeTime)
-        if (isBookSuccess) {
-            const setRes = await redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
-        }
-    }
-    // 更新pending rush状态
-    // 若可预约，在order_info新增一条
-    if (isBookSuccess) {
-        // 在order_info新增一条
-        const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
         // 更新pending rush状态
-        const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 2)
-        resData.flag = 1
-    } else {
-        const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 3)
-        resData.flag = 0
+        // 若可预约，在order_info新增一条
+        if (isBookSuccess) {
+            // 在order_info新增一条
+            const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
+            // 更新pending rush状态
+            const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 2)
+            resData.flag = 1
+        } else {
+            const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 3)
+            resData.flag = 0
+        }
+    } catch (e) {
+        console.log('generateRushOrder fail', e)
     }
     return resData
 }

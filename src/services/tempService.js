@@ -6,13 +6,16 @@ const RUSH_LIST = ['lowPrio', 'midPrio', 'highPrio']
 
 // 根据seatId找到其所在floorId
 async function getFloorBySeatId(seatId) {
+    let floorId
     let _sql = `SELECT * from seat_info
                 where seat_id="${seatId}"`
-    let queryRes = await dbUtils.query(_sql)
-    // console.log('getFloorBySeatId queryRes', queryRes, queryRes[0])
-    let floorId
-    if (Array.isArray(queryRes) && queryRes.length > 0) {
-        floorId = queryRes[0].floor_id
+    try {
+        let queryRes = await dbUtils.query(_sql)
+        if (Array.isArray(queryRes) && queryRes.length > 0) {
+            floorId = queryRes[0].floor_id
+        }
+    } catch (e) {
+        console.log('getFloorBySeatId fail', e)
     }
     return floorId
 }

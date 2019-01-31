@@ -7,23 +7,30 @@ const RUSH_LIST = ['lowPrio', 'midPrio', 'highPrio']
 const PENDING_RUSH = 'pendingRushList'
 
 async function getSeatInfoById(seatId) {
+    let res
     let _sql = `SELECT * from seat_info
                 where id="${seatId}"`
-    let result = await dbUtils.query(_sql)
-    if (Array.isArray(result) && result.length > 0) {
-        result = result[0]
-    } else {
-        result = null
+    try {
+        let queryRes = await dbUtils.query(_sql)
+        if (Array.isArray(queryRes) && queryRes.length > 0) {
+            res = queryRes[0]
+        }
+    } catch (e) {
+        console.log('getSeatInfoById fail', e)
     }
-    // console.log('getSeatInfoById', result)
-    return result
+    return res
 }
 
 async function getFloorBySchool(schoolId) {
+    let res
     let _sql = `SELECT * from floor_info
                 where school_id="${schoolId}"`
-    let result = await dbUtils.query(_sql)
-    return result
+    try {
+        res = await dbUtils.query(_sql)
+    } catch (e) {
+        console.log('getFloorBySchool fail', e)
+    }
+    return res
 }
 
 // 根据floorId等搜索座位，从Redis中
@@ -106,10 +113,15 @@ async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
                 // 唤醒消息队列处理
                 rushProcess.resetIsListening()
             })
-        // 根据timeStamp记录请求
-        const addRes = await pendRushSearvice.addPendingRush(userId, timeStamp, 1)
-        resData.timeStamp = timeStamp
-        resData.flag = 1
+        // 根据timeStamp记录pending rush
+        try {
+            const addRes = await pendRushSearvice.addPendingRush(userId, timeStamp, 1)
+            resData.timeStamp = timeStamp
+            resData.flag = 1
+        } catch (e) {
+            console.log('addPendingRush fail', e)
+            resData.flag = 0
+        }
     } else { // 黑名单
         console.log('user forbiddened')
         resData.flag = 0
@@ -119,14 +131,17 @@ async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
 
 // 提交抢座后查询抢座状态
 async function getFloorBySeatId(seatId) {
+    let floorId
     let _sql = `SELECT * from seat_info
                 where seat_id="${seatId}"`
-    let queryRes = await dbUtils.query(_sql)
-    // console.log('getFloorBySeatId queryRes', queryRes)
-    const floorId = queryRes.floor_id
+    try {
+        let queryRes = await dbUtils.query(_sql)
+        floorId = queryRes.floor_id
+    } catch (e) {
+        console.log('getFloorBySeatId fail', e)
+    }
     return floorId
 }
-
 
 function getPriorityByPoint(point) {
     let res = ''
