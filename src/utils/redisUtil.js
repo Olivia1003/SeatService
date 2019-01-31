@@ -23,10 +23,11 @@ function test() {
 function getHashField(field) {
     return new Promise((resolve, reject) => {
         client.hgetall(field, function (err, value) {
-            if (err) {
-                reject()
-            } else {
+            // console.log('getHashField', err, value)
+            if (value) {
                 resolve(value)
+            } else {
+                reject()
             }
         })
     })
@@ -41,10 +42,12 @@ function getHashField(field) {
 function getHashFieldItem(field, key) {
     return new Promise((resolve, reject) => {
         client.hmget(field, key, function (err, value) {
-            if (err) {
-                reject()
-            } else {
+            if (value && value.length && value[0]) {
+                // console.log('getHashFieldItem success', err, value)
                 resolve(value)
+            } else {
+                // console.log('getHashFieldItem fail', err, value)
+                reject()
             }
         })
     })

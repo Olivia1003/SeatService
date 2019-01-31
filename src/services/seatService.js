@@ -1,6 +1,7 @@
 const dbUtils = require('./../utils/dbUtil')
 const redisUtils = require('./../utils/redisUtil')
 const rushProcess = require('../controllers/rushProcess')
+const pendRushSearvice = require('../services/pendingRushService')
 // 抢座优先级：低，中，高
 const RUSH_LIST = ['lowPrio', 'midPrio', 'highPrio']
 const PENDING_RUSH = 'pendingRushList'
@@ -30,54 +31,58 @@ async function searchSeatList(floorId, date, timeList, keywords) {
     let resData = {}
     // const floorField = 'floor1'
     const floorField = `floor${floorId}`
-    const queryRes = await redisUtils.getHashField(floorField)
-    console.log('searchSeatList queryRes', queryRes)
-    const allSeatList = []
-    for (key in queryRes) {
-        if (queryRes[key] && JSON.parse(queryRes[key])) {
-            console.log('push item', queryRes[key], JSON.parse(queryRes[key]))
-            allSeatList.push(JSON.parse(queryRes[key]))
+    try {
+        const queryRes = await redisUtils.getHashField(floorField)
+        console.log('searchSeatList queryRes success')
+        console.log(queryRes)
+        const allSeatList = []
+        for (key in queryRes) {
+            if (queryRes[key] && JSON.parse(queryRes[key])) {
+                allSeatList.push(JSON.parse(queryRes[key]))
+            }
         }
-    }
-    console.log('allSeatList', allSeatList)
-    // 筛选符合条件的，做标记（要返回所有座位信息）
-    resData = allSeatList.map((sItem) => {
-        let isFree = false
-        let resDate = ''
-        let resTimeList = []
-        if (sItem.seatType === 1) { // 仅标记椅子
-            let sameDateTime = false
-            // 遍历日期，看是否重合
-            sItem.freeTime.forEach((tItem) => {
-                if (sameDateTime) {
-                    return
-                }
-                // 相同日期
-                const sameDate = tItem.date === date
-                // 重合时间段
-                const sameTimeSec = tItem.timeList.some((secId) => {
-                    return timeList.indexOf(secId) >= 0
+        // console.log('allSeatList', allSeatList)
+        // 筛选符合条件的，做标记（要返回所有座位信息）
+        resData = allSeatList.map((sItem) => {
+            let isFree = false
+            let resDate = ''
+            let resTimeList = []
+            if (sItem.seatType === 1) { // 仅标记椅子
+                let sameDateTime = false
+                // 遍历日期，看是否重合
+                sItem.freeTime.forEach((tItem) => {
+                    if (sameDateTime) {
+                        return
+                    }
+                    // 相同日期
+                    const sameDate = tItem.date === date
+                    // 重合时间段
+                    const sameTimeSec = tItem.timeList.some((secId) => {
+                        return timeList.indexOf(secId) >= 0
+                    })
+                    if (sameDate && sameTimeSec) {
+                        sameDateTime = true
+                        resDate = tItem.date
+                        resTimeList = tItem.timeList
+                    }
                 })
-                if (sameDate && sameTimeSec) {
-                    sameDateTime = true
-                    resDate = tItem.date
-                    resTimeList = tItem.timeList
-                }
-            })
-            // 重合关键词，至少包含一个关键词
-            const sameKeyword = sItem.keywords.some((kItem) => {
-                return keywords.indexOf(kItem) >= 0
-            })
-            isFree = sameDateTime && sameKeyword
-        }
-        return {
-            ...sItem,
-            date: resDate,
-            timeList: resTimeList,
-            isFree
-        }
-    })
-    console.log('filtered resData', resData)
+                // 重合关键词，至少包含一个关键词
+                const sameKeyword = sItem.keywords.some((kItem) => {
+                    return keywords.indexOf(kItem) >= 0
+                })
+                isFree = sameDateTime && sameKeyword
+            }
+            return {
+                ...sItem,
+                date: resDate,
+                timeList: resTimeList,
+                isFree
+            }
+        })
+        // console.log('filtered resData', resData)
+    } catch (e) {
+        console.log('searchSeatList queryRes fail')
+    }
     return resData
 }
 
@@ -85,14 +90,16 @@ async function searchSeatList(floorId, date, timeList, keywords) {
 async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
     let resData = {}
     const listKey = getPriorityByPoint(userPoint)
+    const timeStamp = new Date().getTime() // 生成该用户唯一的timeStamp
     const rushItem = {
         userId,
         seatId,
         date,
-        timeList
+        timeList,
+        timeStamp
     }
-    if (listKey) {
-        console.log('pushIntoList', listKey, rushItem)
+    if (listKey) { // 正常用户
+        console.log('添加请求到队列', listKey, rushItem)
         // 加入消息队列
         redisUtils.pushIntoList(listKey, JSON.stringify(rushItem))
             .then(() => {
@@ -100,32 +107,17 @@ async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
                 rushProcess.resetIsListening()
             })
         // 根据timeStamp记录请求
-        const userKey = `user${userId}`
-        const timeStamp = new Date().getTime()
-        const rushDetailStr = await redisUtils.getHashFieldItem(PENDING_RUSH, userKey)
-        const newRushItem = {
-            timeStamp,
-            status: 1
-        }
-        let rushDetail = []
-        console.log('newRushItem', newRushItem)
-        if (rushDetailStr && JSON.parse(rushDetailStr)) { // 之前有其他请求
-            rushDetail = JSON.parse(rushDetailStr)
-            console.log('get pending rush', PENDING_RUSH, userKey, rushDetail)
-            rushDetail.push(newRushItem)
-        } else { // 第一次请求
-            console.log('get pending rush empty')
-            rushDetail = [newRushItem]
-        }
-        console.log('set pending rush item', userKey, JSON.stringify(rushDetail))
-        redisUtils.setHashFieldItem(PENDING_RUSH, userKey, JSON.stringify(rushDetail))
-    } else {
+        const addRes = await pendRushSearvice.addPendingRush(userId, timeStamp, 1)
+        resData.timeStamp = timeStamp
+        resData.flag = 1
+    } else { // 黑名单
         console.log('user forbiddened')
+        resData.flag = 0
     }
     return resData
 }
 
-// 根据seatId找到其所在floorId
+// 提交抢座后查询抢座状态
 async function getFloorBySeatId(seatId) {
     let _sql = `SELECT * from seat_info
                 where seat_id="${seatId}"`

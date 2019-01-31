@@ -2,6 +2,7 @@ const redisUtil = require('../utils/redisUtil')
 const orderService = require('../services/orderService')
 // const seatService = require('../services/seatService')
 const seatService = require('../services/tempService')
+const pendRushService = require('../services/pendingRushService')
 const arrayUtil = require('../utils/arrayUtil')
 // const dbUtil = require('../utils/dbUtil')
 // const TIME_OUT = 3000
@@ -21,61 +22,9 @@ function resetIsListening() {
     }
 }
 
-// 取出一个请求后，在数据库新增订单
-// async function generateRushOrder(rushItem) {
-//     return new Promise((resolve, reject) => {
-//         let resData = {
-//             flag: 0
-//         }
-//         console.log('generateRushOrder', rushItem)
-//         // 在order_info新增一条
-//         // console.log('orderService', orderService)
-//         const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
-//         console.log('addOrder res', addDBRes)
-//         // 改变redis中空闲时间
-//         const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
-//         const floorKey = `floor${floorId}`
-//         const seatKey = `seat${rushItem.seatId}`
-//         redisUtil.getHashFieldItem(floorKey, seatKey)
-//             .then((res) => {
-//                 if (res && JSON.parse(res)) {
-//                     const seatData = JSON.parse(res)
-//                     console.log('seatData', seatData, seatData.freeTime)
-//                     const newFreeTime = seatData.freeTime.map((tItem) => {
-//                         if (tItem.date === rushItem.date) {
-//                             // 时间段取差集
-//                             const newTimeList = []
-//                             tItem.timeList.forEach((secItem) => {
-//                                 if (!(rushItem.timeList.indexOf(secItem) >= 0)) {
-//                                     newTimeList.push(secItem)
-//                                 }
-//                             })
-//                             return {
-//                                 date: tItem.date,
-//                                 timeList: newTimeList
-//                             }
-//                         } else {
-//                             return tItem
-//                         }
-//                     })
-//                     const newSeatData = {
-//                         ...seatData,
-//                         freeTime: newFreeTime
-//                     }
-//                     console.log('newSeatData', newSeatData, newSeatData.freeTime)
-//                     redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
-//                     resData.flag = 1
-//                     resolve(resData)
-//                 }
-//             }, (res) => {
-//                 console.log('generateRushOrder fail', res)
-//                 reject(resData)
-//             })
-//     })
-// }
-
 // 取出一个请求后，更新redis并且在数据库新增订单
 async function generateRushOrder(rushItem) {
+    console.log('取出并处理rushItem', rushItem)
     let resData = {
         flag: 0
     }
@@ -113,12 +62,17 @@ async function generateRushOrder(rushItem) {
             const setRes = await redisUtil.setHashFieldItem(floorKey, seatKey, JSON.stringify(newSeatData))
         }
     }
+    // 更新pending rush状态
     // 若可预约，在order_info新增一条
     if (isBookSuccess) {
-        // console.log('orderService', orderService)
+        // 在order_info新增一条
         const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
-        // console.log('addOrder res', addDBRes)
+        // 更新pending rush状态
+        const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 2)
         resData.flag = 1
+    } else {
+        const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 3)
+        resData.flag = 0
     }
     return resData
 }

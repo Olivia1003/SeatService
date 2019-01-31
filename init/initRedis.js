@@ -4,16 +4,18 @@ function initRedisSeat() {
     console.log('initRedisSeat')
     // const floorField = 'floor1'
     const floorField = 'floor1'
+    const date1 = '2019-01-31'
+    const date2 = '2019-02-01'
     const originSeatList = {
         seat111: {
             seatId: 111,
             position: [1, 1],
             seatType: 1,
             freeTime: [{
-                date: '2019-02-10',
-                timeList: [1, 2, 3, 4, 5],
+                date: date1,
+                timeList: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
             }, {
-                date: '2019-02-11',
+                date: date2,
                 timeList: [1, 2, 3, 4, 5],
             }],
             keywords: ['window']
@@ -23,10 +25,10 @@ function initRedisSeat() {
             position: [1, 2],
             seatType: 1,
             freeTime: [{
-                date: '2019-02-10',
+                date: date1,
                 timeList: [6, 7, 8],
             }, {
-                date: '2019-02-11',
+                date: date2,
                 timeList: [6, 7, 8],
             }],
             keywords: ['window']
@@ -36,10 +38,10 @@ function initRedisSeat() {
             position: [1, 3],
             seatType: 1,
             freeTime: [{
-                date: '2019-02-10',
+                date: date1,
                 timeList: [1, 9, 10, 11, 12],
             }, {
-                date: '2019-02-11',
+                date: date2,
                 timeList: [1, 9, 10, 11, 12],
             }],
             keywords: []
@@ -69,14 +71,6 @@ function initPendingRush() {
     const field = 'pendingRushList'
     const originRushList = {
         useroxNlG45Cgon1PJh2gjw8vyybaEAU: [{
-            timeStamp: 152343,
-            status: 1
-        }],
-        userox2: [{
-            timeStamp: 152343,
-            status: 1
-        }],
-        userox3: [{
             timeStamp: 152343,
             status: 1
         }]

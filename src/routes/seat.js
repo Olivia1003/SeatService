@@ -8,5 +8,6 @@ const routers = router
     .get('/floor', seatController.getFloorBySchool)
     .get('/search', seatController.searchSeatList)
     .put('/rush', seatController.bookSeatRush)
+    .get('/rushSearch', seatController.getRushStatus)
 
 module.exports = routers
