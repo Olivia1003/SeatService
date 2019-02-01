@@ -3,27 +3,26 @@ const userService = require('./../services/userService')
 const global = require('../utils/global')
 
 // 根据openId获取用户信息
-// async function getUserInfoById(ctx) {
-//     let resData
-//     const userId = ctx.request.query.userId
-//     // const userId = 1003
-//     try {
-//         const queryRes = await userService.getUserInfoById(userId)
-//         resData = {
-//             userId: queryRes.user_id,
-//             name: queryRes.name,
-//             school: queryRes.school,
-//             point: queryRes.point,
-//             rank: queryRes.rank,
-//             hour: queryRes.hour,
-//             leaveShort: queryRes.leave_short,
-//             leaveLong: queryRes.leave_long
-//         }
-//     } catch (e) {
-//         console.log('getUserInfoById fail', e)
-//     }
-//     ctx.body = resData
-// }
+async function getUserInfoById(ctx) {
+    let resData
+    const userId = ctx.request.query.userId
+    try {
+        const queryRes = await userService.getUserInfoById(userId)
+        resData = {
+            userId: queryRes.user_id,
+            name: queryRes.name,
+            school: queryRes.school,
+            point: queryRes.point,
+            rank: queryRes.rank,
+            hour: queryRes.hour,
+            leaveShort: queryRes.leave_short,
+            leaveLong: queryRes.leave_long
+        }
+    } catch (e) {
+        console.log('getUserInfoById fail', e)
+    }
+    ctx.body = resData
+}
 
 // 接收客户端code，向微信服务器请求openId等信息
 async function checkUserLogin(ctx) {
@@ -65,6 +64,6 @@ async function transCodeToSession(code) {
 }
 
 module.exports = {
-    // getUserInfoById,
+    getUserInfoById,
     checkUserLogin
 }

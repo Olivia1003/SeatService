@@ -14,15 +14,15 @@ async function getOrderByUserId(ctx) {
         if (queryRes) {
             resData = queryRes.map((oItem) => {
                 return {
-                    seatId: oItem.seat_id,
-                    seatName: oItem.name,
-                    school: oItem.school,
-                    floor: oItem.floor,
-                    keywords: oItem.keywords,
                     orderId: oItem.order_id,
                     date: oItem.date,
                     timeList: JSON.parse(oItem.time_list) || [],
-                    status: oItem.status
+                    status: oItem.status,
+                    seatId: oItem.seat_id,
+                    seatName: oItem.name,
+                    floorId: oItem.floor_id,
+                    floorName: oItem.floor_name,
+                    keywords: oItem.keywords
                 }
             })
         }

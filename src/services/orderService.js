@@ -3,8 +3,8 @@ const dbUtils = require('./../utils/dbUtil')
 async function getOrderByUserId(userId) {
     let res
     let _sql = `SELECT * 
-                FROM order_info inner join seat_info
-                ON order_info.seat_id = seat_info.seat_id
+                FROM order_info inner join seat_info inner join floor_info
+                ON order_info.seat_id = seat_info.seat_id and seat_info.floor_id = floor_info.floor_id
                 WHERE user_id="${userId}"`
     try {
         let queryRes = await dbUtils.query(_sql)
