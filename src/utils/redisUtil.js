@@ -78,6 +78,20 @@ function setHashFieldItem(field, key, keyValue) {
     })
 }
 
+/**
+ * 清空整个hashmap
+ * @param {*} field 'floor1'
+ */
+function delHashField(field) {
+    return new Promise((resolve, reject) => {
+        client.del(field, (err, value) => {
+            console.log('delHashField', field, 'result', err, value)
+            resolve()
+        })
+    })
+}
+
+
 // /**
 //  * 删除单个seat的值
 //  * @param {*} field 'floor1'
@@ -137,5 +151,6 @@ module.exports = {
     setHashFieldItem,
     popFromList,
     bPopFromList,
-    pushIntoList
+    pushIntoList,
+    delHashField
 }

@@ -9,5 +9,7 @@ const routers = router
     .get('/search', seatController.searchSeatList)
     .put('/rush', seatController.bookSeatRush)
     .get('/rushSearch', seatController.getRushStatus)
+    // 管理端
+    .get('/manage', seatController.changeSeatPosition)
 
 module.exports = routers

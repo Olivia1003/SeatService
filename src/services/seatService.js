@@ -74,10 +74,12 @@ async function searchSeatList(floorId, date, timeList, keywords) {
                     }
                 })
                 // 重合关键词，至少包含一个关键词
-                const sameKeyword = sItem.keywords.some((kItem) => {
-                    return keywords.indexOf(kItem) >= 0
-                })
+                // const sameKeyword = sItem.keywords.some((kItem) => {
+                //     return keywords.indexOf(kItem) >= 0
+                // })
+                const sameKeyword = true // temp
                 isFree = sameDateTime && sameKeyword
+                console.log('check isFree', sameDateTime, sameKeyword, isFree)
             }
             return {
                 ...sItem,
@@ -143,6 +145,56 @@ async function getFloorBySeatId(seatId) {
     return floorId
 }
 
+// 管理端：改变座位布局
+async function changeSeatPosition(seatDataStr, floorId) {
+    // temp
+    const date1 = '2019-01-31'
+    const date2 = '2019-02-01'
+    const shorTimeList = [0, 1, 2, 3, 4, 5, 6]
+    const fullTimeList = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+
+    const res = {
+        flag: 0
+    }
+    if (seatDataStr && JSON.parse(seatDataStr)) {
+        const seatData = JSON.parse(seatDataStr)
+        // console.log('changeSeatPosition seatData', seatData, 'floorId', floorId)
+        const {
+            seatList
+        } = seatData
+        const floorKey = `floor${floorId}`
+        let seatId = 1
+        const seatListObj = {}
+        if (seatList) {
+            seatList.forEach((sItem) => {
+                const seatKey = `seat${seatId}`
+                const seatItem = {
+                    seatId,
+                    position: [sItem.c, sItem.r],
+                    seatType: sItem.type,
+                    freeTime: [{
+                        date: date1,
+                        timeList: shorTimeList
+                    }, {
+                        date: date2,
+                        timeList: fullTimeList
+                    }],
+                    keywords: []
+                }
+                seatListObj[seatKey] = JSON.stringify(seatItem)
+                seatId++
+            })
+            // console.log('changeSeatPosition seatListObj', seatListObj)
+            // 先清空
+            const delRes = await redisUtils.delHashField(floorKey)
+            // 再赋值
+            const setRes = await redisUtils.setHashField(floorKey, seatListObj)
+            res.flag = 1
+        }
+    }
+    return res
+}
+
 function getPriorityByPoint(point) {
     let res = ''
     if (point >= 0 && point < 100) {
@@ -160,5 +212,6 @@ module.exports = {
     getFloorBySchool,
     searchSeatList,
     bookSeatRush,
-    getFloorBySeatId
+    getFloorBySeatId,
+    changeSeatPosition
 }

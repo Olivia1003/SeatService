@@ -34,7 +34,10 @@ async function generateRushOrder(rushItem) {
         const floorId = await seatService.getFloorBySeatId(rushItem.seatId)
         if (!floorId) {
             console.log('get floorId fail')
-            return
+            const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 3)
+            console.log('rushItem 失败，状态改为3')
+            resData.flag = 0
+            return resData
         }
         console.log('floorId', floorId)
         const floorKey = `floor${floorId}`
@@ -77,9 +80,11 @@ async function generateRushOrder(rushItem) {
             const addDBRes = await orderService.addOrder(rushItem.userId, rushItem.seatId, rushItem.date, rushItem.timeList)
             // 更新pending rush状态
             const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 2)
+            console.log('rushItem 成功，状态改为2')
             resData.flag = 1
         } else {
             const setRushRes = await pendRushService.setPendingRush(rushItem.userId, rushItem.timeStamp, 3)
+            console.log('rushItem 失败，状态改为3')
             resData.flag = 0
         }
     } catch (e) {
@@ -103,6 +108,7 @@ function getRushItem(listKey) {
                     // console.log('开始添加订单', rushItem)
                     generateRushOrder(rushItem)
                         .then((res) => {
+                            console.log('generateRushOrder over res', res)
                             if (res.flag === 1) {
                                 console.log('添加订单成功', res)
                                 resolve()

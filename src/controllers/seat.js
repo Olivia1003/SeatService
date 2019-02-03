@@ -81,10 +81,23 @@ async function getRushStatus(ctx) {
     ctx.body = resData
 }
 
+// 管理端修改座位
+async function changeSeatPosition(ctx) {
+    let resData = {}
+    // console.log('changeSeatPosition', ctx.request.query)
+    const seatDataStr = ctx.request.query.seatData
+    const floorId = ctx.request.query.floorId
+    const changeRes = await seatService.changeSeatPosition(seatDataStr, floorId)
+    console.log('changeSeatPosition changeRes', changeRes)
+    resData.flag = changeRes.flag
+    ctx.body = resData
+}
+
 module.exports = {
     getSeatInfoById,
     getFloorBySchool,
     searchSeatList,
     bookSeatRush,
-    getRushStatus
+    getRushStatus,
+    changeSeatPosition
 }
