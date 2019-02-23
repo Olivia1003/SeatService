@@ -3,8 +3,9 @@ const pendRushService = require('./../services/pendingRushService')
 
 async function getSeatInfoById(ctx) {
     let resData
+    const seatId = ctx.request.query.seatId
     try {
-        resData = await seatService.getSeatInfoById('3')
+        resData = await seatService.getSeatInfoById(seatId)
     } catch (e) {
         console.log('getSeatInfoById fail', e)
     }
@@ -81,6 +82,36 @@ async function getRushStatus(ctx) {
     ctx.body = resData
 }
 
+// 根据seatId得到所在楼层seatList
+async function getFloorSeatList(ctx) {
+    let resData = {}
+    const {
+        seatId
+    } = ctx.request.query
+    console.log('getFloorSeatList start', seatId)
+    try {
+        // 得到floorId
+        const floorId = await seatService.getFloorBySeatId(seatId)
+        console.log('floorId', floorId)
+        if (floorId) {
+            // 得到seatList
+            const seatList = await seatService.getFloorSeatList(floorId)
+            resData.seatList = seatList.map((sItem) => {
+                return {
+                    seatId: sItem.seat_id,
+                    name: sItem.name,
+                    position: sItem.position,
+                    type: sItem.type
+                }
+            })
+        }
+    } catch (e) {
+        console.log('getFloorSeatList fail', e)
+    }
+    console.log('getFloorSeatList resData', resData)
+    ctx.body = resData
+}
+
 // 管理端修改座位
 async function changeSeatPosition(ctx) {
     let resData = {}
@@ -99,5 +130,6 @@ module.exports = {
     searchSeatList,
     bookSeatRush,
     getRushStatus,
-    changeSeatPosition
+    changeSeatPosition,
+    getFloorSeatList
 }

@@ -133,16 +133,32 @@ async function bookSeatRush(userId, userPoint, seatId, date, timeList) {
 
 // 提交抢座后查询抢座状态
 async function getFloorBySeatId(seatId) {
+    console.log('getFloorBySeatId start')
     let floorId
     let _sql = `SELECT * from seat_info
                 where seat_id="${seatId}"`
     try {
         let queryRes = await dbUtils.query(_sql)
-        floorId = queryRes.floor_id
+        console.log('getFloorBySeatId', queryRes)
+        floorId = queryRes[0].floor_id
     } catch (e) {
         console.log('getFloorBySeatId fail', e)
     }
     return floorId
+}
+
+// 根据floorId得到seatList，从MySQL中，用于查看seatMap
+async function getFloorSeatList(floorId) {
+    let res
+    let _sql = `SELECT * from seat_info
+                where floor_id="${floorId}"`
+    try {
+        let queryRes = await dbUtils.query(_sql)
+        res = queryRes
+    } catch (e) {
+        console.log('getFloorBySeatId fail', e)
+    }
+    return res
 }
 
 // 管理端：改变座位布局
@@ -213,5 +229,6 @@ module.exports = {
     searchSeatList,
     bookSeatRush,
     getFloorBySeatId,
-    changeSeatPosition
+    changeSeatPosition,
+    getFloorSeatList
 }
